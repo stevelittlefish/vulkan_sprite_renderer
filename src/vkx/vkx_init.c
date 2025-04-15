@@ -18,9 +18,10 @@ static const char* validation_layers[VKX_NUM_VALIDATION_LAYERS] = {
 	"VK_LAYER_KHRONOS_validation"
 };
 
-#define VKX_NUM_DEVICE_EXTENSIONS 1
+#define VKX_NUM_DEVICE_EXTENSIONS 2
 static const char* device_extensions[VKX_NUM_DEVICE_EXTENSIONS] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 };
 
 static bool vkx_check_validation_layer_support() {
@@ -170,9 +171,13 @@ static VkPhysicalDevice vkx_pick_physical_device(void) {
 		}
 
 		// Check the device supports the required swap chain features
-		VkxSwapChainSupportDetails swap_chain_support = vkx_query_swap_chain_support(devices[i], vkx_instance.surface);
-		bool swap_chain_adequate = swap_chain_support.formats_count > 0 && swap_chain_support.present_modes_count > 0;
-		vkx_free_swap_chain_support(&swap_chain_support);
+		bool swap_chain_adequate = false;
+
+		if (indices.has_present_family) {
+			VkxSwapChainSupportDetails swap_chain_support = vkx_query_swap_chain_support(devices[i], vkx_instance.surface);
+			swap_chain_adequate = swap_chain_support.formats_count > 0 && swap_chain_support.present_modes_count > 0;
+			vkx_free_swap_chain_support(&swap_chain_support);
+		}
 
         if (indices.has_graphics_family
 				&& indices.has_present_family
@@ -295,16 +300,22 @@ void vkx_init(SDL_Window* window) {
 
 		queue_create_infos[i] = queue_create_info;
 	}
-	
+
 	VkPhysicalDeviceVulkan13Features vulkan13_features = {0};
 	vulkan13_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 	vulkan13_features.dynamicRendering = VK_TRUE;
 	vulkan13_features.synchronization2 = VK_TRUE;
 
+	VkPhysicalDeviceVulkan12Features vulkan12_features = {0};
+	vulkan12_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	vulkan12_features.descriptorIndexing = VK_TRUE;
+	vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	vulkan12_features.pNext = &vulkan13_features;
+	
 	VkPhysicalDeviceFeatures2 features2 = {0};
 	features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	features2.features.samplerAnisotropy = VK_TRUE;
-	features2.pNext = &vulkan13_features;
+	features2.pNext = &vulkan12_features;
 
 	VkDeviceCreateInfo create_info = {0};
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

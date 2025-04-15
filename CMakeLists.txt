@@ -22,8 +22,10 @@ find_package(Vulkan REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include/)
 
-include(sourcelist.cmake)
-add_executable(main ${source_list} ${header_list})
+file(GLOB_RECURSE SOURCE_LIST "${PROJECT_SOURCE_DIR}/src/*.c")
+file(GLOB_RECURSE HEADER_LIST "${PROJECT_SOURCE_DIR}/include/*.h")
+
+add_executable(main ${SOURCE_LIST} ${HEADER_LIST})
 
 # Library linking is OS dependent
 if(UNIX)

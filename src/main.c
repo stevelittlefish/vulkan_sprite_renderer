@@ -100,6 +100,9 @@ typedef struct {
 enum Texture {
 	TEX_TILES,
 	TEX_MONSTERS,
+	TEX_MONSTERS2,
+	TEX_MONSTERS3,
+	TEX_MONSTERS4,
 
 	_TEX_COUNT
 };
@@ -116,6 +119,9 @@ enum Texture {
 #define TOTAL_TILES (X_TILES * Y_TILES)
 
 #define NUM_MONSTERS 1000
+
+const bool limit_fps = false;
+const double min_frame_time = 1.0 / 120.0;
 
 uint8_t tiles[X_TILES * Y_TILES] = {0};
 
@@ -196,6 +202,13 @@ bool fullscreen = false;
 // FPS counter
 uint32_t frame_count = 0;
 double last_fps_time = 0.0;
+
+// If the swap chain is suboptimal, we record how many cycles it was suboptimal for
+// in this variable as some older graphics cards occasionally report this for just
+// a single cycle and recreating the swap chain causes more problems than it solves
+// in that particular situation
+uint32_t suboptimal_swapchain_count = 0;
+const uint32_t SUBOPTIMAL_SWAPCHAIN_THRESHOLD = 10;
 
 VkVertexInputBindingDescription get_binding_description() {
 	VkVertexInputBindingDescription binding_description = {0};
@@ -348,7 +361,7 @@ void init_vulkan(void) {
 	vkx_init(window);
 
 	// ----- Create the swap chain -----
-	vkx_create_swap_chain(true);
+	vkx_create_swap_chain(false);
 	
 	// ----- Create the graphics pipeline -----
 	// Vertex input bindng and attributes
@@ -418,7 +431,10 @@ void init_vulkan(void) {
 	// ----- Load the texture images -----
 	textures = malloc(sizeof(VkxImage) * num_textures);
 	textures[0] = vkx_create_texture_image("textures/tiles.png");
-	textures[1] = vkx_create_texture_image("textures/monsters.png");
+	textures[1] = vkx_create_texture_image("textures/monsters1.png");
+	textures[2] = vkx_create_texture_image("textures/monsters2.png");
+	textures[3] = vkx_create_texture_image("textures/monsters3.png");
+	textures[4] = vkx_create_texture_image("textures/monsters4.png");
 	
 	// Create the texture sampler
 	create_texture_sampler();
@@ -755,7 +771,7 @@ void record_command_buffer(VkCommandBuffer command_buffer, uint32_t image_index)
 	
 	// -- Render the sprites --------------------------------------------------
 	vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, sprite_pipeline.pipeline);
-	
+
 	VkBuffer sprite_vertex_buffers[] = {sprite_vertex_buffer.buffer};
 	VkDeviceSize sprite_offsets[] = {0};
 	vkCmdBindVertexBuffers(command_buffer, 0, 1, sprite_vertex_buffers, sprite_offsets);
@@ -827,7 +843,7 @@ void draw_frame() {
 		vkx_recreate_swap_chain(vkx_instance.command_buffers[current_frame]);
 		return;
 	} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-		fprintf(stderr, "Failed to acquire swap chain image\n");
+		fprintf(stderr, "Failed to acquire swap chain image (result: %d)\n", result);
 		exit(1);
 	}
 	
@@ -909,13 +925,33 @@ void draw_frame() {
 
 	result = vkQueuePresentKHR(vkx_instance.present_queue, &present_info);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebuffer_resized) {
-		printf("Couldn't present swap chain image - recreating swap chain\n");
+	if (result == VK_SUBOPTIMAL_KHR) {
+		if (suboptimal_swapchain_count == 0) {
+			printf("Swapchain was suboptimal\n");
+		}
+		suboptimal_swapchain_count++;
+	}
+	else {
+		// Reset to 0 if it doesn't come back like that every frame
+		suboptimal_swapchain_count = 0;
+	}
+	
+	if (framebuffer_resized) {
+		printf("Framebuffer resized - recreating swap chain\n");
 		framebuffer_resized = false;
 		vkx_recreate_swap_chain(vkx_instance.command_buffers[current_frame]);
-
-	} else if (result != VK_SUCCESS) {
-		fprintf(stderr, "failed to present swap chain image!\n");
+	}
+	else if (suboptimal_swapchain_count >= SUBOPTIMAL_SWAPCHAIN_THRESHOLD) {
+		suboptimal_swapchain_count = 0;
+		printf("Swapchain is still suboptimal - recreating\n");
+		vkx_recreate_swap_chain(vkx_instance.command_buffers[current_frame]);
+	}
+	else if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		printf("Couldn't present swap chain image - recreating swap chain (result: %d)\n", result);
+		vkx_recreate_swap_chain(vkx_instance.command_buffers[current_frame]);
+	}
+	else if (result != VK_SUBOPTIMAL_KHR && result != VK_SUCCESS) {
+		fprintf(stderr, "failed to present swap chain image! (result: %d)\n", result);
 		exit(1);
 	}
 
@@ -1108,7 +1144,10 @@ void create_monsters(void) {
 		monsters[i].color[2] = 1.0f - blue_fade * 0.6f;
 		monsters[i].color[3] = 1.0f;
 
-		monsters[i].texture = TEX_MONSTERS;
+		monsters[i].texture = TEX_MONSTERS + (i / 16) % 4;
+
+		assert(monsters[i].texture < _TEX_COUNT);
+		assert(monsters[i].texture >= TEX_MONSTERS);
 
 		// Create the sprite vertices
 		for (size_t j=0; j<6; j++ ) {
@@ -1119,16 +1158,25 @@ void create_monsters(void) {
 				vertex_sprites[idx].color[k] = monsters[i].color[k];
 			}
 			// Calculate uv index base on 8x8 grid of sprites
-			size_t sprite_x = i % 8;
-			size_t sprite_y = (i % 64) / 8;
-			float uv_scale = 1.0f / 8.0f;
+			size_t sprite_x = i % 4;
+			size_t sprite_y = (i % 16) / 4;
+			float uv_scale = 1.0f / 4.0f;
 
 			vertex_sprites[idx].uv[0] = uv_scale * sprite_x;
 			vertex_sprites[idx].uv[1] = uv_scale * sprite_y;
 			vertex_sprites[idx].uv2[0] = vertex_sprites[idx].uv[0] + uv_scale;
 			vertex_sprites[idx].uv2[1] = vertex_sprites[idx].uv[1] + uv_scale;
-			vertex_sprites[idx].texture_index = TEX_MONSTERS;
+			vertex_sprites[idx].texture_index = monsters[i].texture;
 			vertex_sprites[idx].sprite_index = i;
+
+			assert(vertex_sprites[idx].uv[0] >= 0.0f);
+			assert(vertex_sprites[idx].uv[0] <= 1.0f);
+			assert(vertex_sprites[idx].uv[1] >= 0.0f);
+			assert(vertex_sprites[idx].uv[1] <= 1.0f);
+			assert(vertex_sprites[idx].uv2[0] >= 0.0f);
+			assert(vertex_sprites[idx].uv2[0] <= 1.0f);
+			assert(vertex_sprites[idx].uv2[1] >= 0.0f);
+			assert(vertex_sprites[idx].uv2[1] <= 1.0f);
 		}
 	}
 }
@@ -1240,6 +1288,7 @@ int main(void) {
 						SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 						fullscreen = true;
 					}
+					framebuffer_resized = true;
 				}
 			}
         }
@@ -1247,6 +1296,22 @@ int main(void) {
 		uint64_t ticks = SDL_GetTicksNS();
 		t = SDL_NS_TO_SECONDS((double) ticks);
 		double dt = t - t_last;
+
+		if (limit_fps && dt < min_frame_time) {
+			int dt_ms = (int) (1000.0 * dt);
+			int sleep_time = (int) (1000.0 * min_frame_time) - dt_ms;
+			if (sleep_time <= 0) {
+				sleep_time = 1;
+			}
+			SDL_Delay(sleep_time);
+			ticks = SDL_GetTicksNS();
+			t = SDL_NS_TO_SECONDS((double) ticks);
+			dt = t - t_last;
+		}
+		else if (dt > 0.1) {
+			// Clamp the delta time to 0.1 seconds
+			dt = 0.1;
+		}
 
 		update(dt);
 

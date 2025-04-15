@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_nonuniform_qualifier : require
 
 layout(binding = 0) uniform UniformBufferObject {
     float t;
@@ -13,7 +14,7 @@ layout(location = 2) flat in uint frag_texture_index;
 layout(location = 0) out vec4 out_color;
 
 void main() {
-	vec4 tex_color = texture(texSampler[frag_texture_index], frag_tex_coord);
+	vec4 tex_color = texture(texSampler[nonuniformEXT(frag_texture_index)], frag_tex_coord);
 	if (tex_color.a < 0.5) {
 		discard;
 	}
