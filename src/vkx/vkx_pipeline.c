@@ -212,7 +212,7 @@ VkxPipeline vkx_create_vertex_buffer_pipeline(
 	rendering_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 	rendering_info.colorAttachmentCount = 1;
 	rendering_info.pColorAttachmentFormats = &vkx_swap_chain.image_format;
-	rendering_info.depthAttachmentFormat = vkx_find_depth_format(vkx_instance);
+	rendering_info.depthAttachmentFormat = vkx_find_depth_format();
 
 	VkPipelineDepthStencilStateCreateInfo depth_stencil = {0};
 	depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

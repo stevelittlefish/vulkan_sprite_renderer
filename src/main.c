@@ -840,7 +840,7 @@ void draw_frame() {
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		printf("Couldn't acquire swap chain image - recreating swap chain\n");
-		vkx_recreate_swap_chain(vkx_instance.command_buffers[current_frame]);
+		vkx_recreate_swap_chain();
 		return;
 	} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
 		fprintf(stderr, "Failed to acquire swap chain image (result: %d)\n", result);
@@ -939,16 +939,16 @@ void draw_frame() {
 	if (framebuffer_resized) {
 		printf("Framebuffer resized - recreating swap chain\n");
 		framebuffer_resized = false;
-		vkx_recreate_swap_chain(vkx_instance.command_buffers[current_frame]);
+		vkx_recreate_swap_chain();
 	}
 	else if (suboptimal_swapchain_count >= SUBOPTIMAL_SWAPCHAIN_THRESHOLD) {
 		suboptimal_swapchain_count = 0;
 		printf("Swapchain is still suboptimal - recreating\n");
-		vkx_recreate_swap_chain(vkx_instance.command_buffers[current_frame]);
+		vkx_recreate_swap_chain();
 	}
 	else if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		printf("Couldn't present swap chain image - recreating swap chain (result: %d)\n", result);
-		vkx_recreate_swap_chain(vkx_instance.command_buffers[current_frame]);
+		vkx_recreate_swap_chain();
 	}
 	else if (result != VK_SUBOPTIMAL_KHR && result != VK_SUCCESS) {
 		fprintf(stderr, "failed to present swap chain image! (result: %d)\n", result);
@@ -961,7 +961,7 @@ void draw_frame() {
 void cleanup_vulkan(void) {
 	printf("Cleaning up Vulkan\n");
 
-	vkx_cleanup_swap_chain(&vkx_instance);
+	vkx_cleanup_swap_chain();
 	
 	vkDestroySampler(vkx_instance.device, texture_sampler, NULL);
 	for (size_t i = 0; i < num_textures; i++) {

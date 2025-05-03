@@ -259,7 +259,7 @@ void vkx_recreate_swap_chain() {
 
 	vkDeviceWaitIdle(vkx_instance.device);
 
-	vkx_cleanup_swap_chain(vkx_instance);
+	vkx_cleanup_swap_chain();
 
 	vkx_create_swap_chain(vkx_swap_chain.has_depth_image);
 }
