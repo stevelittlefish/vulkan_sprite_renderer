@@ -408,6 +408,7 @@ void init_vulkan(void) {
 		"shaders/screen.frag.spv"
 	);
 
+	free(sprite_attribute_descriptions);
 	free(attribute_descriptions);
 
 	
