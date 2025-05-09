@@ -42,10 +42,12 @@ static bool vkx_check_validation_layer_support() {
 		}
 
 		if (!layer_found) {
+			free(available_layers);
 			return false;
 		}
 	}
 
+	free(available_layers);
 	return true;
 }
 
@@ -68,7 +70,9 @@ static char const * const * vkx_get_required_extensions(uint32_t* count) {
 	}
 	
 	if (!enable_validation_layers) {
-		return sdl_extensions;
+		const char** extensions = malloc(sizeof(const char*) * *count);
+		memcpy(extensions, sdl_extensions, sizeof(const char*) * *count);
+		return extensions;
 	}
 
 	// If validation layers are enabled, add the debug utils extension
@@ -248,6 +252,8 @@ void vkx_init(SDL_Window* window) {
 		fprintf(stderr, "failed to create instance!");
 		exit(1);
 	}
+
+	free((void *)instance_create_info.ppEnabledExtensionNames);
 
 	// ----- Create the debug messenger -----
 	if (enable_validation_layers) {
