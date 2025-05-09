@@ -993,15 +993,20 @@ void cleanup_vulkan(void) {
 	vkx_cleanup_instance();
 }
 
-double rand_double(double max) {
-	return ((double)rand() / (double)RAND_MAX) * max;
+double rand_double(double exclusive_max) {
+	for (;;) {
+		double result = ((double)rand() / (double)RAND_MAX) * exclusive_max;
+		if (result < exclusive_max) {
+			return result;
+		}
+	}
 }
 
-int rand_range(int min, int max) {
+int rand_range(int min, int exclusive_max) {
 	/*
-	 * Return a random number between min and max
+	 * Return a random number between min and exclusive max
 	 */
-	return (int)((double)rand() / ((double)RAND_MAX + 1) * (max - min) + min);
+	return min + (int)rand_double((double)(exclusive_max - min));
 }
 
 size_t get_tile_index(size_t x, size_t y) {
