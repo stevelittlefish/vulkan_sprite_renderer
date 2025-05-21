@@ -34,8 +34,6 @@ To get everything working you should just need to do (from the root of the proje
 ./build_and_run.sh
 ```
 
-If it works you should see a rotating coloured square.
-
 ## Windows Instructions
 
 You will need the following dependencies:
