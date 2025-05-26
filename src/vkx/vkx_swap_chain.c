@@ -248,6 +248,8 @@ void vkx_cleanup_swap_chain() {
 
 	free(vkx_swap_chain.image_views);
 	vkx_swap_chain.image_views = NULL;
+	free(vkx_swap_chain.images);
+	vkx_swap_chain.images = NULL;
 	vkx_swap_chain.images_count = 0;
 
 	vkDestroySwapchainKHR(vkx_instance.device, vkx_swap_chain.swap_chain, NULL);
