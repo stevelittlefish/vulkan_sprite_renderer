@@ -5,6 +5,5 @@
 #include "vkx/vkx_init.h"
 #include "vkx/vkx_swap_chain.h"
 #include "vkx/vkx_pipeline.h"
-#include "vkx/vkx_sync.h"
 
 #endif // VXK_H

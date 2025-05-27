@@ -639,7 +639,25 @@ void init_vulkan(void) {
 	}
 
 	// ----- Create the semaphores and fences -----
-	vkx_init_sync_objects();
+
+	VkSemaphoreCreateInfo semaphore_info = {0};
+	semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fence_info = {0};
+	fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for (size_t i = 0; i < VKX_FRAMES_IN_FLIGHT; i++) {
+		if (vkCreateSemaphore(vkx_instance.device, &semaphore_info, NULL, &vkx_frame_sync_objects[i].image_available_semaphore) != VK_SUCCESS) {
+			fprintf(stderr, "failed to create semaphores for a frame!\n");
+			exit(1);
+		}
+
+		if (vkCreateFence(vkx_instance.device, &fence_info, NULL, &vkx_frame_sync_objects[i].in_flight_fence) != VK_SUCCESS) {
+			fprintf(stderr, "failed to create synchronization objects for a frame!\n");
+			exit(1);
+		}
+	}
 
 	printf("Initiialisation complete\n");
 }
@@ -834,10 +852,10 @@ void record_command_buffer(VkCommandBuffer command_buffer, uint32_t image_index)
 }
 
 void draw_frame() {
-	vkWaitForFences(vkx_instance.device, 1, &vkx_sync_objects.in_flight_fences[current_frame], VK_TRUE, UINT64_MAX);
+	vkWaitForFences(vkx_instance.device, 1, &vkx_frame_sync_objects[current_frame].in_flight_fence, VK_TRUE, UINT64_MAX);
 
 	uint32_t image_index;
-	VkResult result = vkAcquireNextImageKHR(vkx_instance.device, vkx_swap_chain.swap_chain, UINT64_MAX, vkx_sync_objects.image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+	VkResult result = vkAcquireNextImageKHR(vkx_instance.device, vkx_swap_chain.swap_chain, UINT64_MAX, vkx_frame_sync_objects[current_frame].image_available_semaphore, VK_NULL_HANDLE, &image_index);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		printf("Couldn't acquire swap chain image - recreating swap chain\n");
@@ -884,7 +902,7 @@ void draw_frame() {
 	
 	memcpy(uniform_buffers_mapped[current_frame], &ubo, sizeof(ubo));
 
-	vkResetFences(vkx_instance.device, 1, &vkx_sync_objects.in_flight_fences[current_frame]);
+	vkResetFences(vkx_instance.device, 1, &vkx_frame_sync_objects[current_frame].in_flight_fence);
 	
 	vkResetCommandBuffer(vkx_instance.command_buffers[current_frame], /*VkCommandBufferResetFlagBits*/ 0);
 	
@@ -894,20 +912,20 @@ void draw_frame() {
 	VkSubmitInfo submit_info = {0};
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	
-	VkSemaphore wait_semaphores[] = {vkx_sync_objects.image_available_semaphores[current_frame]};
+	VkSemaphore* image_available_semaphore = &vkx_frame_sync_objects[current_frame].image_available_semaphore;
 	VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 	submit_info.waitSemaphoreCount = 1;
-	submit_info.pWaitSemaphores = wait_semaphores;
+	submit_info.pWaitSemaphores = image_available_semaphore;
 	submit_info.pWaitDstStageMask = wait_stages;
 
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &vkx_instance.command_buffers[current_frame];
 
-	VkSemaphore signal_semaphores[] = {vkx_sync_objects.render_finished_semaphores[current_frame]};
+	VkSemaphore* render_finished_semaphore = &vkx_swap_chain.render_finished_semaphores[image_index];
 	submit_info.signalSemaphoreCount = 1;
-	submit_info.pSignalSemaphores = signal_semaphores;
+	submit_info.pSignalSemaphores = render_finished_semaphore;
 
-	if (vkQueueSubmit(vkx_instance.graphics_queue, 1, &submit_info, vkx_sync_objects.in_flight_fences[current_frame]) != VK_SUCCESS) {
+	if (vkQueueSubmit(vkx_instance.graphics_queue, 1, &submit_info, vkx_frame_sync_objects[current_frame].in_flight_fence) != VK_SUCCESS) {
 		fprintf(stderr, "failed to submit draw command buffer!");
 		exit(1);
 	}
@@ -916,7 +934,7 @@ void draw_frame() {
 	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 	present_info.waitSemaphoreCount = 1;
-	present_info.pWaitSemaphores = signal_semaphores;
+	present_info.pWaitSemaphores = render_finished_semaphore;
 
 	VkSwapchainKHR swap_chains[] = {vkx_swap_chain.swap_chain};
 	present_info.swapchainCount = 1;
@@ -983,7 +1001,10 @@ void cleanup_vulkan(void) {
 	vkx_cleanup_buffer(&index_buffer);
 	vkx_cleanup_buffer(&sprite_vertex_buffer);
 	
-	vkx_cleanup_sync_objects();
+	for (size_t i = 0; i < VKX_FRAMES_IN_FLIGHT; i++) {
+		vkDestroySemaphore(vkx_instance.device, vkx_frame_sync_objects[i].image_available_semaphore, NULL);
+		vkDestroyFence(vkx_instance.device, vkx_frame_sync_objects[i].in_flight_fence, NULL);
+	}
 
 	for (size_t i = 0; i < VKX_FRAMES_IN_FLIGHT; i++) {
 		vkx_cleanup_image(&offscreen_images[i]);

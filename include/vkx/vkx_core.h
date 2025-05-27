@@ -72,6 +72,8 @@ typedef struct {
 	VkFormat image_format;
 	// Size of the swap chain images
 	VkExtent2D extent;
+	// Semaphore for each swapchain image
+	VkSemaphore* render_finished_semaphores;
 	// Depth buffer
 	VkxImage depth_image;
 	// Is the depth image created?
@@ -85,15 +87,14 @@ typedef struct {
 } VkxPipeline;
 
 typedef struct {
-	VkSemaphore image_available_semaphores[VKX_FRAMES_IN_FLIGHT];
-	VkSemaphore render_finished_semaphores[VKX_FRAMES_IN_FLIGHT];
-	VkFence in_flight_fences[VKX_FRAMES_IN_FLIGHT];
-} VkxSyncObjects;
+	VkSemaphore image_available_semaphore;
+	VkFence in_flight_fence;
+} VkxFrameSyncObjects;
 
 
 extern VkxInstance vkx_instance;
 extern VkxSwapChain vkx_swap_chain;
-extern VkxSyncObjects vkx_sync_objects;
+extern VkxFrameSyncObjects vkx_frame_sync_objects[VKX_FRAMES_IN_FLIGHT];
 
 VkxSwapChainSupportDetails vkx_query_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
 

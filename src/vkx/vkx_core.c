@@ -9,7 +9,7 @@
 
 VkxInstance vkx_instance = {0};
 VkxSwapChain vkx_swap_chain = {0};
-VkxSyncObjects vkx_sync_objects = {0};
+VkxFrameSyncObjects vkx_frame_sync_objects[VKX_FRAMES_IN_FLIGHT] = {0};
 
 VkxSwapChainSupportDetails vkx_query_swap_chain_support(VkPhysicalDevice device, VkSurfaceKHR surface) {
 	VkxSwapChainSupportDetails details = {0};
