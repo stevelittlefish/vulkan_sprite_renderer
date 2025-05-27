@@ -48,12 +48,6 @@ delete the .vs and out directories and load the folder again, or make some trivi
 add a space) to get it to reload.  There probably is a better way to do this but I don't really develop on Windows and I'm a
 Visual Studio noob!
 
-# Known Issues
+# Odin Version
 
-The sync objects are not managed correctly and may result in sync issues depending on your graphics card / driver.
-
-Currently all sync objects (semaphores and fences) are created and indexed per frame in flight.  This is actually incorrect.
-
-The fence and image available semaphores should be one per frame in flight, but the render fishished semaphore should be per swap chain image.
-
-See [Odin Vulkan Sprite Renderer](https://github.com/stevelittlefish/odin_vulkan_sprite_renderer) for a better implementation (in the Odin programming language).
+See [Odin Vulkan Sprite Renderer](https://github.com/stevelittlefish/odin_vulkan_sprite_renderer) for an implementation of this project in the Odin programming language.
