@@ -119,6 +119,17 @@ void vkx_create_swap_chain(bool create_depth_image) {
 	vkGetSwapchainImagesKHR(vkx_instance.device, vkx_swap_chain.swap_chain, &vkx_swap_chain.images_count, NULL);
 	vkx_swap_chain.images = malloc(sizeof(VkImage) * vkx_swap_chain.images_count);
 	vkGetSwapchainImagesKHR(vkx_instance.device, vkx_swap_chain.swap_chain, &vkx_swap_chain.images_count, vkx_swap_chain.images);
+
+	VkSemaphoreCreateInfo semaphore_info = {0};
+	semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	vkx_swap_chain.render_finished_semaphores = malloc(sizeof(VkSemaphore) * vkx_swap_chain.images_count);
+	for (size_t i = 0; i < vkx_swap_chain.images_count; i++) {
+		if (vkCreateSemaphore(vkx_instance.device, &semaphore_info, NULL, &vkx_swap_chain.render_finished_semaphores[i]) != VK_SUCCESS) {
+			fprintf(stderr, "failed to create render finished semaphore for a swap chain image!\n");
+			exit(1);
+		}
+	}
 	
 	// Transition the images to a valid layout
     // Begin the command buffer
@@ -244,10 +255,15 @@ void vkx_cleanup_swap_chain() {
 
 	for (size_t i = 0; i < vkx_swap_chain.images_count; i++) {
 		vkDestroyImageView(vkx_instance.device, vkx_swap_chain.image_views[i], NULL);
+		vkDestroySemaphore(vkx_instance.device, vkx_swap_chain.render_finished_semaphores[i], NULL);
 	}
 
+	free(vkx_swap_chain.render_finished_semaphores);
+	vkx_swap_chain.render_finished_semaphores = NULL;
 	free(vkx_swap_chain.image_views);
 	vkx_swap_chain.image_views = NULL;
+	free(vkx_swap_chain.images);
+	vkx_swap_chain.images = NULL;
 	vkx_swap_chain.images_count = 0;
 
 	vkDestroySwapchainKHR(vkx_instance.device, vkx_swap_chain.swap_chain, NULL);
