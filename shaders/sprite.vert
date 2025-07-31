@@ -1,8 +1,9 @@
 #version 450
+#define NUM_MONSTERS 1000
 
 layout(binding = 0) uniform UniformBufferObject {
     float t;
-	mat4 mvps[1000];
+	mat4 mvps[NUM_MONSTERS];
 } ubo;
 
 layout(location = 0) in vec4 color_in;

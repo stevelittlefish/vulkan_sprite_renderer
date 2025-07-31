@@ -1,9 +1,5 @@
 #version 450
 
-layout(binding = 0) uniform UniformBufferObject {
-    float t;
-} ubo;
-
 layout(push_constant) uniform PushConstantObject {
 	mat4 mvp;
 	vec4 color;

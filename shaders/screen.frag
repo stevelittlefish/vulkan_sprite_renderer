@@ -1,7 +1,9 @@
 #version 450
+#define NUM_MONSTERS 1000
 
 layout(binding = 0) uniform UniformBufferObject {
     float t;
+    mat4 mvps[NUM_MONSTERS];
 } ubo;
 
 layout(binding = 1) uniform sampler2D tex_sampler;
