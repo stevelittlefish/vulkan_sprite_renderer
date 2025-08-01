@@ -1,6 +1,7 @@
 #version 450
+#define NUM_TEXTURES 5
 
-layout(binding = 1) uniform sampler2D texSampler[2];
+layout(binding = 1) uniform sampler2D texSampler[NUM_TEXTURES];
 
 layout(push_constant) uniform PushConstantObject {
 	mat4 mvp;

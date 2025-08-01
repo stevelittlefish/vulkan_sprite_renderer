@@ -1,11 +1,8 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : require
+#define NUM_TEXTURES 5
 
-layout(binding = 0) uniform UniformBufferObject {
-    float t;
-	mat4 mvps[1000];
-} ubo;
-layout(binding = 1) uniform sampler2D texSampler[2];
+layout(binding = 1) uniform sampler2D texSampler[NUM_TEXTURES];
 
 layout(location = 0) in vec4 frag_color;
 layout(location = 1) in vec2 frag_tex_coord;
