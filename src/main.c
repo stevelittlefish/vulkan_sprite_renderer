@@ -875,6 +875,7 @@ void draw_frame() {
 		glm_mat4_mul(projection_matrix, view_matrix, ubo.mvps[i]);
 		// Create a model matrix for the sprite
 		mat4 model_matrix = GLM_MAT4_IDENTITY_INIT;
+		// Monsters are 2 tiles wide (in the rendered image)
 		const float monster_size = 2.0f;
 		// Centre the sprite around it's position
 		vec3 offset = {-monster_size / 2, -monster_size / 2, 0.0f};
@@ -888,7 +889,6 @@ void draw_frame() {
 		};
 		glm_translate(model_matrix, translation);
 
-		// Monsters are 8 tiles wide
 		vec3 scale = {monster_size, monster_size, 1.0f};
 		// Pulsating effect
 		float sin_val = (float) sin(t * 2.0f + i * 5) * 0.15f;
