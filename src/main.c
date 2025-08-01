@@ -1184,7 +1184,7 @@ void create_monsters(void) {
 			for (size_t k=0; k<4; k++) {
 				vertex_sprites[idx].color[k] = monsters[i].color[k];
 			}
-			// Calculate uv index base on 8x8 grid of sprites
+			// Calculate uv index based on 4x4 grid of sprites
 			size_t sprite_x = i % 4;
 			size_t sprite_y = (i % 16) / 4;
 			float uv_scale = 1.0f / 4.0f;
