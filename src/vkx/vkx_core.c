@@ -366,8 +366,8 @@ void vkx_transition_image_layout(
 	}
 	else if (old_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 			&& new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-		barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		barrier.srcAccessMask = 0;
+		barrier.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 		barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	}
@@ -380,9 +380,9 @@ void vkx_transition_image_layout(
 	}
 	else if (old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 			&& new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-		barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		barrier.srcAccessMask = 0;
-		barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		barrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 	}
 	else if (old_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL

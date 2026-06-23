@@ -478,7 +478,7 @@ void init_vulkan(void) {
 			VK_IMAGE_ASPECT_COLOR_BIT
 		);
 
-		// transition the image layout to color attachment optimal
+		// transition the image layout to shader read
 		vkx_transition_image_layout_tmp_buffer(
 			offscreen_images[i].image,
 			vkx_swap_chain.image_format,
@@ -536,7 +536,6 @@ void init_vulkan(void) {
 		ds_alloc_info.descriptorSetCount = VKX_FRAMES_IN_FLIGHT;
 		ds_alloc_info.pSetLayouts = ds_layouts;
 		
-		// Create the base descriptor sets
 		if (vkAllocateDescriptorSets(vkx_instance.device, &ds_alloc_info, descriptor_sets) != VK_SUCCESS) {
 			fprintf(stderr, "failed to allocate descriptor sets!\n");
 			exit(1);
@@ -595,7 +594,6 @@ void init_vulkan(void) {
 		ds_alloc_info.descriptorSetCount = VKX_FRAMES_IN_FLIGHT;
 		ds_alloc_info.pSetLayouts = ds_layouts;
 		
-		// Create the base descriptor sets
 		if (vkAllocateDescriptorSets(vkx_instance.device, &ds_alloc_info, screen_descriptor_sets) != VK_SUCCESS) {
 			fprintf(stderr, "failed to allocate screen descriptor sets!\n");
 			exit(1);
@@ -680,7 +678,7 @@ void record_command_buffer(VkCommandBuffer command_buffer, uint32_t image_index)
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 	);
 
-	// Memory barrier to transition the offscreen image from color attachment to shader read
+	// Memory barrier to transition the offscreen image from shader read to color attachment
 	vkx_transition_image_layout(
 		command_buffer,
 		offscreen_images[current_frame].image,
@@ -799,7 +797,7 @@ void record_command_buffer(VkCommandBuffer command_buffer, uint32_t image_index)
 
 	vkCmdEndRendering(command_buffer);
 
-	// Memory barrier to transition the offscreen image from shader read to color attachment
+	// Memory barrier to transition the offscreen image from color attachment to shader read
 	vkx_transition_image_layout(
 		command_buffer,
 		offscreen_images[current_frame].image,
@@ -836,7 +834,7 @@ void record_command_buffer(VkCommandBuffer command_buffer, uint32_t image_index)
 	// --- End dynamic rendering ----------------------------------------------
 	vkCmdEndRendering(command_buffer);
 	
-	// Memory barrier to transition the swap chain image from color attachment to present
+	// Memory barrier to transition the swap chain image from color attachment to present source
 	vkx_transition_image_layout(
 		command_buffer,
 		vkx_swap_chain.images[image_index],
@@ -1315,6 +1313,7 @@ int main(void) {
 						SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 						fullscreen = true;
 					}
+					SDL_SyncWindow(window);
 					framebuffer_resized = true;
 				}
 			}
